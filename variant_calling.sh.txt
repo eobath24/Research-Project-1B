@@ -1,0 +1,49 @@
+#################################################################################################################
+Variant calling script
+#################################################################################################################
+
+###### Arguments #######
+# $1 = assembly.fasta file
+# $2 & $3 = paired end Illumina fasta files 
+# $4 = "name of strain"
+
+
+
+# Mapping and calling variants
+minimap2 -a -x sr $1 $2 $3 | samtools view -h -F 0x900 - | samtools sort -O bam > $4_mapped_reads.bam
+samtools flagstat $4_mapped_reads.bam
+bcftools mpileup -Ou -f $1 $4_mapped_reads.bam| bcftools call -vc -Ov > $4_variants.vcf
+
+
+
+# Consensus sequence generation of 10kb region of the tgr locus
+bcftools view -I $4_variants.vcf -Oz -o $4_variants.vcf.gz
+bcftools index $4_variants.vcf.gz
+samtools faidx $1 contig_1224:5000-14999 | bcftools consensus $4_variants.vcf.gz > $4_consensus_1224_10kb.fasta
+
+
+
+# Depths and coverage of each strain
+samtools depth -a $4_mapped_reads.bam > $4_depth.txt
+python get_depths.py -i $4_depth.txt -o $4_coverage.bed
+
+
+
+# View the mapped reads and the specific SNPs
+samtools index $4_mapped_reads.bam
+samtools tview $4_mapped_reads.bam $1
+
+
+
+
+#################################################################################################################
+EXECUTING SCRIPT
+#################################################################################################################
+bash variant_calling.sh $1 $2 $3 $4
+
+Example
+bash variant_calling.sh  QS23_assembly.fasta WS205_S42_R1_001.fastq.gz WS205_S42_R2_001.fastq.gz "WS205"
+
+
+
+
