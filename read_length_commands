@@ -1,0 +1,8 @@
+# Read length distribution .csv file
+
+echo "Strain,Length" > lengths.csv
+
+conda activate read_length_disribution
+
+bioawk -c fastx '{print "QS23," length($seq)}' QS23.fastq.gz >> lengths.csv
+bioawk -c fastx '{print "QS458," length($seq)}' QS458.fastq.gz >> lengths.csv
